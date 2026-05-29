@@ -1,6 +1,6 @@
 FROM alpine:latest
 
-# Pacotes
+# Instala pacotes
 RUN apk update && apk add --no-cache \
     bash \
     sudo \
@@ -18,15 +18,13 @@ RUN apk update && apk add --no-cache \
     font-noto \
     python3 \
     py3-pip \
+    py3-websockify \
     git
 
-# instala websockify
-RUN pip install websockify
-
-# baixa noVNC
+# Baixa noVNC
 RUN git clone https://github.com/novnc/noVNC.git /opt/novnc
 
-# usuário
+# Cria usuário
 RUN useradd -m -s /bin/bash benjamim \
     && echo "benjamim:1234" | chpasswd \
     && adduser benjamim wheel \
@@ -36,20 +34,20 @@ RUN useradd -m -s /bin/bash benjamim \
 RUN echo "startxfce4" > /home/benjamim/.xsession \
     && chown benjamim:benjamim /home/benjamim/.xsession
 
-# VNC config
+# Configuração VNC
 RUN mkdir -p /home/benjamim/.vnc \
     && echo '#!/bin/sh\nxrdb $HOME/.Xresources\nstartxfce4 &' > /home/benjamim/.vnc/xstartup \
     && chmod +x /home/benjamim/.vnc/xstartup \
     && chown -R benjamim:benjamim /home/benjamim/.vnc
 
-# portas
+# Portas
 EXPOSE 6080
 EXPOSE 7681
 
-# tailscale auth
+# Auth key do Tailscale
 ENV TS_AUTHKEY=""
 
-# inicia tudo
+# Inicialização
 CMD sh -c '\
 mkdir -p /var/run/dbus && \
 dbus-daemon --system & \
