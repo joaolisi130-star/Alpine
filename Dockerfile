@@ -8,31 +8,37 @@ RUN apk update && apk add --no-cache \
     curl \
     wget \
     ca-certificates \
-    iptables \
-    ip6tables \
     ttyd \
     tailscale \
     xfce4 \
     xfce4-terminal \
-    xrdp \
+    tigervnc \
+    novnc \
+    websockify \
     dbus \
     font-noto
 
-# Cria usuário
+# Usuário
 RUN useradd -m -s /bin/bash benjamim \
     && echo "benjamim:1234" | chpasswd \
     && adduser benjamim wheel \
     && echo "%wheel ALL=(ALL) ALL" >> /etc/sudoers
 
-# Config XFCE
+# XFCE
 RUN echo "startxfce4" > /home/benjamim/.xsession \
     && chown benjamim:benjamim /home/benjamim/.xsession
 
+# Script VNC
+RUN mkdir -p /home/benjamim/.vnc \
+    && echo '#!/bin/sh\nstartxfce4 &' > /home/benjamim/.vnc/xstartup \
+    && chmod +x /home/benjamim/.vnc/xstartup \
+    && chown -R benjamim:benjamim /home/benjamim/.vnc
+
 # Portas
 EXPOSE 7681
-EXPOSE 3389
+EXPOSE 6080
 
-# Tailscale auth
+# Tailscale
 ENV TS_AUTHKEY=""
 
 # Inicialização
@@ -42,7 +48,7 @@ dbus-daemon --system & \
 tailscaled --tun=userspace-networking --state=mem: & \
 sleep 5 && \
 tailscale up --authkey=$TS_AUTHKEY && \
-xrdp-sesman & \
-xrdp & \
+su - benjamim -c "vncserver :1 -geometry 1280x720 -depth 24" && \
+websockify --web=/usr/share/novnc/ 6080 localhost:5901 & \
 ttyd -W -p 7681 bash \
 '
