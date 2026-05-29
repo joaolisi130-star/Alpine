@@ -1,6 +1,7 @@
 FROM alpine:latest
 
-RUN apk add --no-cache \
+# Pacotes básicos
+RUN apk update && apk add --no-cache \
     bash \
     curl \
     wget \
@@ -9,16 +10,19 @@ RUN apk add --no-cache \
     ip6tables \
     ttyd
 
-# adiciona repo do tailscale
+# Repositório oficial do Tailscale (Alpine)
 RUN echo "https://pkgs.tailscale.com/stable/alpine" >> /etc/apk/repositories \
     && wget -O /etc/apk/keys/tailscale.rsa.pub https://pkgs.tailscale.com/stable/alpine/tailscale.rsa.pub \
     && apk update \
     && apk add tailscale
 
+# Porta do terminal web
 EXPOSE 7681
 
+# Auth key do Tailscale (Railway variable)
 ENV TS_AUTHKEY=""
 
+# Start script
 CMD sh -c '\
 tailscaled --tun=userspace-networking --state=mem: & \
 sleep 5 && \
