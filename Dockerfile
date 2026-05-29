@@ -1,27 +1,24 @@
 FROM alpine:latest
 
-# Instala pacotes
-RUN apk update && apk add --no-cache \
+RUN apk add --no-cache \
     bash \
     curl \
     wget \
-    ttyd \
+    ca-certificates \
     iptables \
     ip6tables \
-    ca-certificates
+    ttyd
 
-# Instala Tailscale
-RUN wget https://pkgs.tailscale.com/stable/alpine/tailscale.apk \
-    && apk add --allow-untrusted tailscale.apk \
-    && rm tailscale.apk
+# adiciona repo do tailscale
+RUN echo "https://pkgs.tailscale.com/stable/alpine" >> /etc/apk/repositories \
+    && wget -O /etc/apk/keys/tailscale.rsa.pub https://pkgs.tailscale.com/stable/alpine/tailscale.rsa.pub \
+    && apk update \
+    && apk add tailscale
 
-# Porta do ttyd
 EXPOSE 7681
 
-# Variável do token
 ENV TS_AUTHKEY=""
 
-# Inicialização
 CMD sh -c '\
 tailscaled --tun=userspace-networking --state=mem: & \
 sleep 5 && \
