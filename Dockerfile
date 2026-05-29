@@ -1,6 +1,6 @@
 FROM alpine:latest
 
-# Instala pacotes
+# Instala pacotes necessários
 RUN apk update && apk add --no-cache \
     bash \
     sudo \
@@ -17,17 +17,14 @@ RUN apk update && apk add --no-cache \
     dbus \
     font-noto \
     python3 \
-    py3-websockify \
     git
 
-# noVNC
+# Instala noVNC
 RUN git clone https://github.com/novnc/noVNC.git /opt/novnc
 
 # Usuário
 RUN useradd -m -s /bin/bash benjamim && \
-    echo "benjamim:1234" | chpasswd && \
-    adduser benjamim wheel && \
-    echo "%wheel ALL=(ALL) ALL" >> /etc/sudoers
+    echo "benjamim:1234" | chpasswd
 
 # Configuração VNC
 RUN mkdir -p /home/benjamim/.vnc && \
@@ -42,16 +39,15 @@ RUN mkdir -p /home/benjamim/.vnc && \
 EXPOSE 6080
 EXPOSE 7681
 
-# Tailscale auth key
+# Tailscale
 ENV TS_AUTHKEY=""
 
 # Inicialização
 CMD sh -c '\
-mkdir -p /tmp/.X11-unix && \
 tailscaled --tun=userspace-networking --state=mem: & \
 sleep 5 && \
 tailscale up --authkey=$TS_AUTHKEY || true && \
 su - benjamim -c "vncserver :1 -geometry 1280x720 -depth 24" && \
-websockify --web=/opt/novnc 6080 localhost:5901 & \
+python3 /opt/novnc/utils/novnc_proxy --vnc localhost:5901 --listen 6080 & \
 ttyd -W -p 7681 bash \
 '
